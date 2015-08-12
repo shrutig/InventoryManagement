@@ -8,6 +8,7 @@ package com.tuplejump.inventorymanagement;
 import java.sql.Connection;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.h2.jdbcx.JdbcConnectionPool;
@@ -18,15 +19,15 @@ public class DBInventory implements Inventory, OrderManager {
     static final String DB_URL = "jdbc:h2:~/test";
 
     JdbcConnectionPool jdbcConnectionPool;
-    UpdateDB updateDB;
+    DBSupport dbSupport;
 
     public DBInventory() {
-        updateDB = new UpdateDB();
+
         try {
             Class.forName(JDBC_DRIVER);
             jdbcConnectionPool = JdbcConnectionPool.create(DB_URL, "username", "password");
-        }
-        catch (Exception e){
+            dbSupport = new DBSupport(jdbcConnectionPool);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
         String sql = "CREATE TABLE IF NOT EXISTS table1 " +
@@ -35,48 +36,41 @@ public class DBInventory implements Inventory, OrderManager {
                 " type VARCHAR(255), " +
                 " make VARCHAR(255), " +
                 " PRIMARY KEY ( code ))";
-        updateDB.update(jdbcConnectionPool, sql);
+        dbSupport.update(sql);
     }
 
     public void deleteDatabase() {
         String sql = "DROP TABLE table1 ";
-        updateDB.update(jdbcConnectionPool, sql);
+        dbSupport.update(sql);
         jdbcConnectionPool.dispose();
     }
 
-    public Item searchItem(String code) {// return null if item not present
-        Item item = new Item();
-        Statement stmt = null;
-        Connection con = null;
-        try {
-            con = jdbcConnectionPool.getConnection();
-            stmt = con.createStatement();
-            ResultSet itr = stmt.executeQuery("SELECT code,quantity,type,make FROM table1");
-            while (itr.next()) {
-                String code1 = itr.getString("code");
-                item.setCode(code1);
-                item.setQuantity(itr.getInt("quantity"));
-                item.setMake(itr.getString("make"));
-                item.setType(itr.getString("type"));
-                if ((item.getCode()).equals(code)) {
-                    stmt.close();
-                    con.close();
-                    return item;
+    public Item searchItem(final String code) {// return null if item not present
+        Item item;
+        String sql = "SELECT code,quantity,type,make FROM table1";
+        ResultSetCallback resultSetCallback = new ResultSetCallback() {
+            public Item doWithResultSet(ResultSet rs) throws SQLException {
+                while (rs.next()) {
+                    if ((rs.getString("code")).equals(code)) {
+                        Item item = new Item();
+                        item.setCode(code);
+                        item.setQuantity(rs.getInt("quantity"));
+                        item.setMake(rs.getString("make"));
+                        item.setType(rs.getString("type"));
+                        return item;
+                    }
                 }
+                Item item = null;
+                return item;
             }
-            itr.close();
-            stmt.close();
-            con.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        item = null;
+        };
+        item = dbSupport.execute(sql, resultSetCallback);
         return item;
     }
 
     public void addItem(Item item) {
         String sql = "INSERT INTO table1 VALUES ('" + item.getCode() + "', " + Integer.toString(item.getQuantity()) + " ,'" + item.getType() + "','" + item.getMake() + "')";
-        updateDB.update(jdbcConnectionPool, sql);
+        dbSupport.update(sql);
     }
 
     public boolean placeOrder(String OrderCode, int quantity) {
@@ -86,9 +80,9 @@ public class DBInventory implements Inventory, OrderManager {
             if (item.getQuantity() >= quantity) {
                 item.setQuantity(item.getQuantity() - quantity);
                 String sql = "DELETE FROM table1 WHERE code = '" + OrderCode + "'";
-                updateDB.update(jdbcConnectionPool, sql);
+                dbSupport.update(sql);
                 sql = "INSERT INTO table1 VALUES ('" + item.getCode() + "', " + Integer.toString(item.getQuantity()) + " ,'" + item.getType() + "','" + item.getMake() + "')";
-                updateDB.update(jdbcConnectionPool, sql);
+                dbSupport.update(sql);
                 canOrder = true;
             } else
                 canOrder = false;
