@@ -5,11 +5,9 @@ package com.tuplejump.inventorymanagement;
  */
 
 
-import java.sql.Connection;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import org.h2.jdbcx.JdbcConnectionPool;
 
@@ -36,40 +34,50 @@ public class DBInventory implements Inventory, OrderManager {
                 " type VARCHAR(255), " +
                 " make VARCHAR(255), " +
                 " PRIMARY KEY ( code ))";
-        dbSupport.update(sql);
+        Collection<Object> objects = new ArrayList<Object>();
+        dbSupport.update(sql,objects);
     }
 
     public void deleteDatabase() {
         String sql = "DROP TABLE inventorytable ";
-        dbSupport.update(sql);
+        Collection<Object> objects = new ArrayList<Object>();
+        dbSupport.update(sql,objects);
         jdbcConnectionPool.dispose();
     }
 
     public Item searchItem(final String code) {// return null if item not present
         Item item;
-        String sql = "SELECT code,quantity,type,make FROM inventorytable WHERE code ='"+code+"'";
+        Collection<Object> objects = new ArrayList<Object>();
+        objects.add(code);
+        String sql = "SELECT code,quantity,type,make FROM inventorytable WHERE code = ?";
         ResultSetCallback resultSetCallback = new ResultSetCallback() {
             public Item doWithResultSet(ResultSet rs) throws SQLException {
                 if (rs.next()) {
-                        Item item = new Item();
-                        item.setCode(code);
-                        item.setQuantity(rs.getInt("quantity"));
-                        item.setMake(rs.getString("make"));
-                        item.setType(rs.getString("type"));
-                        return item;
+                    Item item = new Item();
+                    item.setCode(code);
+                    item.setQuantity(rs.getInt("quantity"));
+                    item.setMake(rs.getString("make"));
+                    item.setType(rs.getString("type"));
+                    return item;
                 }
                 Item item = null;
                 return item;
             }
         };
-        item = dbSupport.execute(sql, resultSetCallback);
+        item = dbSupport.execute(sql, resultSetCallback,objects);
         return item;
     }
 
     public void addItem(Item item) {
-        String sql = "INSERT INTO inventorytable VALUES ('" + item.getCode() + "', " + Integer.toString(item.getQuantity()) + " ,'" + item.getType() + "','" + item.getMake() + "')";
-        if(searchItem(item.getCode())== null)
-        dbSupport.update(sql);
+        PreparedStatement updateItem = null;
+        Collection<Object> objects = new ArrayList<Object>();
+        String sql = "INSERT INTO inventorytable VALUES (?,?,?,?)";
+        objects.add(item.getCode());
+        objects.add(new Integer(item.getQuantity()));
+        objects.add(item.getType());
+        objects.add(item.getMake() );
+        if (searchItem(item.getCode()) == null)
+            dbSupport.update(sql,objects);
     }
 
     public boolean placeOrder(String OrderCode, int quantity) {
@@ -77,7 +85,7 @@ public class DBInventory implements Inventory, OrderManager {
         Item item = searchItem(OrderCode);
         if (item != null) {
             if (item.getQuantity() >= quantity) {
-                changeQuantity(OrderCode,item.getQuantity() - quantity);
+                changeQuantity(OrderCode, item.getQuantity() - quantity);
                 canOrder = true;
             } else
                 canOrder = false;
@@ -85,9 +93,12 @@ public class DBInventory implements Inventory, OrderManager {
         return canOrder;
     }
 
-    public void changeQuantity(String code,int quantity){
-        String sql = "UPDATE inventorytable SET quantity="+ Integer.toString(quantity) +" WHERE code = '" + code + "'";
-        dbSupport.update(sql);
+    public void changeQuantity(String code, int quantity) {
+        String sql = "UPDATE inventorytable SET quantity=? WHERE code =?";
+        Collection<Object> objects = new ArrayList<Object>();
+        objects.add(new Integer(quantity));
+        objects.add(code);
+        dbSupport.update(sql,objects);
     }
 
     public boolean canPlaceOrder(String ItemCode, int quantity) {
