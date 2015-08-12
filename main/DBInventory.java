@@ -30,7 +30,7 @@ public class DBInventory implements Inventory, OrderManager {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        String sql = "CREATE TABLE IF NOT EXISTS table1 " +
+        String sql = "CREATE TABLE IF NOT EXISTS inventorytable " +
                 "(code VARCHAR(255) not NULL, " +
                 " quantity INTEGER, " +
                 " type VARCHAR(255), " +
@@ -40,25 +40,23 @@ public class DBInventory implements Inventory, OrderManager {
     }
 
     public void deleteDatabase() {
-        String sql = "DROP TABLE table1 ";
+        String sql = "DROP TABLE inventorytable ";
         dbSupport.update(sql);
         jdbcConnectionPool.dispose();
     }
 
     public Item searchItem(final String code) {// return null if item not present
         Item item;
-        String sql = "SELECT code,quantity,type,make FROM table1";
+        String sql = "SELECT code,quantity,type,make FROM inventorytable WHERE code ='"+code+"'";
         ResultSetCallback resultSetCallback = new ResultSetCallback() {
             public Item doWithResultSet(ResultSet rs) throws SQLException {
-                while (rs.next()) {
-                    if ((rs.getString("code")).equals(code)) {
+                if (rs.next()) {
                         Item item = new Item();
                         item.setCode(code);
                         item.setQuantity(rs.getInt("quantity"));
                         item.setMake(rs.getString("make"));
                         item.setType(rs.getString("type"));
                         return item;
-                    }
                 }
                 Item item = null;
                 return item;
@@ -69,7 +67,8 @@ public class DBInventory implements Inventory, OrderManager {
     }
 
     public void addItem(Item item) {
-        String sql = "INSERT INTO table1 VALUES ('" + item.getCode() + "', " + Integer.toString(item.getQuantity()) + " ,'" + item.getType() + "','" + item.getMake() + "')";
+        String sql = "INSERT INTO inventorytable VALUES ('" + item.getCode() + "', " + Integer.toString(item.getQuantity()) + " ,'" + item.getType() + "','" + item.getMake() + "')";
+        if(searchItem(item.getCode())== null)
         dbSupport.update(sql);
     }
 
@@ -78,11 +77,7 @@ public class DBInventory implements Inventory, OrderManager {
         Item item = searchItem(OrderCode);
         if (item != null) {
             if (item.getQuantity() >= quantity) {
-                item.setQuantity(item.getQuantity() - quantity);
-                String sql = "DELETE FROM table1 WHERE code = '" + OrderCode + "'";
-                dbSupport.update(sql);
-                sql = "INSERT INTO table1 VALUES ('" + item.getCode() + "', " + Integer.toString(item.getQuantity()) + " ,'" + item.getType() + "','" + item.getMake() + "')";
-                dbSupport.update(sql);
+                changeQuantity(OrderCode,item.getQuantity() - quantity);
                 canOrder = true;
             } else
                 canOrder = false;
@@ -90,6 +85,10 @@ public class DBInventory implements Inventory, OrderManager {
         return canOrder;
     }
 
+    public void changeQuantity(String code,int quantity){
+        String sql = "UPDATE inventorytable SET quantity="+ Integer.toString(quantity) +" WHERE code = '" + code + "'";
+        dbSupport.update(sql);
+    }
 
     public boolean canPlaceOrder(String ItemCode, int quantity) {
         boolean canOrder = false;

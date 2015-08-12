@@ -9,4 +9,6 @@ public interface Inventory {
 	public Item searchItem(String code);
 	
 	public void addItem(Item item);
+
+	public void changeQuantity(String code,int quantity);
 }
