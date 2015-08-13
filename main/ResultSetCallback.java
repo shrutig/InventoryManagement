@@ -8,5 +8,5 @@ import java.sql.SQLException;
  */
 public interface ResultSetCallback {
 
-    public Item doWithResultSet(ResultSet rs)throws SQLException;
+    public Item doWithResultSet(ResultSet rs) throws SQLException;
 }

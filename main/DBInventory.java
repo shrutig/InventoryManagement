@@ -35,13 +35,13 @@ public class DBInventory implements Inventory, OrderManager {
                 " make VARCHAR(255), " +
                 " PRIMARY KEY ( code ))";
         Collection<Object> objects = new ArrayList<Object>();
-        dbSupport.update(sql,objects);
+        dbSupport.update(sql, objects);
     }
 
     public void deleteDatabase() {
         String sql = "DROP TABLE inventorytable ";
         Collection<Object> objects = new ArrayList<Object>();
-        dbSupport.update(sql,objects);
+        dbSupport.update(sql, objects);
         jdbcConnectionPool.dispose();
     }
 
@@ -64,7 +64,7 @@ public class DBInventory implements Inventory, OrderManager {
                 return item;
             }
         };
-        item = dbSupport.execute(sql, resultSetCallback,objects);
+        item = dbSupport.execute(sql, resultSetCallback, objects);
         return item;
     }
 
@@ -75,12 +75,12 @@ public class DBInventory implements Inventory, OrderManager {
         objects.add(item.getCode());
         objects.add(new Integer(item.getQuantity()));
         objects.add(item.getType());
-        objects.add(item.getMake() );
+        objects.add(item.getMake());
         if (searchItem(item.getCode()) == null)
-            dbSupport.update(sql,objects);
+            dbSupport.update(sql, objects);
     }
 
-    public boolean placeOrder(String OrderCode, int quantity) {
+    public synchronized boolean placeOrder(String OrderCode, int quantity) {
         boolean canOrder = false;
         Item item = searchItem(OrderCode);
         if (item != null) {
@@ -98,7 +98,7 @@ public class DBInventory implements Inventory, OrderManager {
         Collection<Object> objects = new ArrayList<Object>();
         objects.add(new Integer(quantity));
         objects.add(code);
-        dbSupport.update(sql,objects);
+        dbSupport.update(sql, objects);
     }
 
     public boolean canPlaceOrder(String ItemCode, int quantity) {
