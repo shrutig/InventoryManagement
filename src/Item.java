@@ -6,7 +6,7 @@ public class Item {
     String make;
     int quantity;
 
-    public String getCode() {
+    public synchronized String getCode() {
         return code;
     }
 
