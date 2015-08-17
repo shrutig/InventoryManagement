@@ -15,7 +15,7 @@ import java.util.Objects;
  */
 public class DBSupport {
     JdbcConnectionPool jdbcConnectionPool;
-
+    Connection con;
     public DBSupport(JdbcConnectionPool jdbcConnectionPool) {
         this.jdbcConnectionPool = jdbcConnectionPool;
     }
@@ -23,21 +23,10 @@ public class DBSupport {
     public void update(String sql, Collection<Object> objects) {
         try {
             PreparedStatement ppstmt = null;
-            int i = 1;
-            Connection con = jdbcConnectionPool.getConnection();
+            con = jdbcConnectionPool.getConnection();
             con.setAutoCommit(false);
             ppstmt = con.prepareStatement(sql);
-            Iterator<Object> itr = objects.iterator();// getting Iterator from array
-            // list to traverse elements
-            Object object = null;
-            while (itr.hasNext()) {
-                object = itr.next();
-                if (object instanceof String)
-                    ppstmt.setString(i, object.toString());
-                else if (object instanceof Integer)
-                    ppstmt.setInt(i, ((Integer) object).intValue());
-                i++;
-            }
+            ppstmt = iterate(ppstmt, objects);
             ppstmt.executeUpdate();
             con.commit();
             ppstmt.close();
@@ -49,17 +38,12 @@ public class DBSupport {
         }
     }
 
-    public Item execute(String sql, ResultSetCallback resultSetCallback, Collection<Object> objects) {
-        Item item;
+    public PreparedStatement iterate(PreparedStatement ppstmt, Collection<Object> objects) {
+        Iterator<Object> itr = objects.iterator();// getting Iterator from array
+        int i = 1;
+        // list to traverse elements
+        Object object = null;
         try {
-            PreparedStatement ppstmt = null;
-            int i = 1;
-            Connection con = jdbcConnectionPool.getConnection();
-            con.setAutoCommit(false);
-            ppstmt = con.prepareStatement(sql);
-            Iterator<Object> itr = objects.iterator();// getting Iterator from array
-            // list to traverse elements
-            Object object = null;
             while (itr.hasNext()) {
                 object = itr.next();
                 if (object instanceof String)
@@ -68,6 +52,20 @@ public class DBSupport {
                     ppstmt.setInt(i, ((Integer) object).intValue());
                 i++;
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return ppstmt;
+    }
+
+    public Item execute(String sql, ResultSetCallback resultSetCallback, Collection<Object> objects) {
+        Item item;
+        try {
+            PreparedStatement ppstmt = null;
+           con = jdbcConnectionPool.getConnection();
+            con.setAutoCommit(false);
+            ppstmt = con.prepareStatement(sql);
+            ppstmt = iterate(ppstmt, objects);
             ResultSet rs = ppstmt.executeQuery();
             con.commit();
             item = resultSetCallback.doWithResultSet(rs);
