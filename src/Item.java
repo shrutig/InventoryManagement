@@ -10,32 +10,32 @@ public class Item {
         return code;
     }
 
-    public void setCode(String code) {
+    public synchronized void setCode(String code) {
         this.code = code;
     }
 
-    public int getQuantity() {
+    public synchronized int getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(int quantity) {
+    public synchronized void setQuantity(int quantity) {
         this.quantity = quantity;
     }
 
-    public String getType() {
+    public synchronized String getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public synchronized void setType(String type) {
         this.type = type;
     }
 
 
-    public String getMake() {
+    public synchronized String getMake() {
         return make;
     }
 
-    public void setMake(String make) {
+    public synchronized void setMake(String make) {
         this.make = make;
     }
 

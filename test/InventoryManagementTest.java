@@ -15,24 +15,21 @@ import static org.junit.Assert.assertTrue;
 public class InventoryManagementTest {
 
     InMemInventory inMem ;
-    Item item ;
 
     @Before
     public void initialise() {
         inMem = new InMemInventory();
-        item = new Item();
+        Item item = new Item();
         item.setCode("code1");
         item.setQuantity(20);
         item.setMake("MAKE1");
         item.setType("TYPE1");
         inMem.addItem(item);
-
     }
 
     @Test
     public void testSearchItem1() {
         Item item2 = inMem.searchItem("code1");
-        assertTrue(item.equals(item2));
         item2.setMake("MAKE2");
         item2.setCode("code3");
         inMem.addItem(item2);
@@ -63,17 +60,12 @@ public class InventoryManagementTest {
             final Thread thread = new Thread(new Runnable() {
                 //@Override
                 public void run() {
-                    synchronized (inMem) {
                         final boolean value = inMem.placeOrder("code1", 20);
-
                         if (value) {
-                            synchronized (itemOrder) {
                                 final int valueint = itemOrder.getQuantity();
                                 itemOrder.setQuantity(valueint + 1);
-                                //System.out.println("entry for " + itemOrder.getQuantity());
-                            }
+
                         }
-                    }
                 }
             });
             thread.start();
@@ -88,13 +80,12 @@ public class InventoryManagementTest {
             System.out.println("Failed while multithreading in inMem");
             // break;
         } else if (itemOrder.getQuantity() ==1){
-            System.out.println("Success in inMem");
+            System.out.println("Success in inMem only 1 record added");
         }
     }
 
     @After
     public void deleteInv(){
         inMem = null;
-        item = null;
     }
 }
