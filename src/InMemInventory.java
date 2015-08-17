@@ -23,12 +23,15 @@ public class InMemInventory implements Inventory, OrderManager {
     }
 
     public void addItem(Item item) {
-        items.add(item);
+        synchronized (items) {
+            items.add(item);
+        }
     }
 
     public void changeQuantity(String code, int quantity) {
-        synchronized (items) {
-            Item item = searchItem(code);
+        Item item = searchItem(code);
+        synchronized (item) {
+
             int index = items.indexOf(item);
 
             if (item != null) {
@@ -40,8 +43,9 @@ public class InMemInventory implements Inventory, OrderManager {
 
     public boolean placeOrder(String code, int quantity) {
         boolean isOrdered = false;
-        synchronized (items) {
-            Item item = searchItem(code);
+        Item item = searchItem(code);
+        synchronized (item) {
+
             if (item != null) {
                 if (item.getQuantity() >= quantity) {
                     changeQuantity(code, item.getQuantity() - quantity);
@@ -49,19 +53,25 @@ public class InMemInventory implements Inventory, OrderManager {
                 } else
                     isOrdered = false;
             }
-            return isOrdered;
         }
+            return isOrdered;
+
     }
 
     public boolean canPlaceOrder(String code, int quantity) {
         boolean canOrder = false;
         Item item = searchItem(code);
-        if (item != null) {
-            if (item.getQuantity() >= quantity) {
-                canOrder = true;
-            } else
-                canOrder = false;
-        }
+
+            if (item != null) {
+                ;
+                if (item.getQuantity() >= quantity) {
+                    canOrder = true;
+
+                } else {
+                    canOrder = false;
+                }
+            }
+
         return canOrder;
     }
 }

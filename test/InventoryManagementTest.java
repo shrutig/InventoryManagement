@@ -19,12 +19,12 @@ public class InventoryManagementTest {
     @Before
     public void initialise() {
         inMem = new InMemInventory();
-        Item item = new Item();
-        item.setCode("code1");
-        item.setQuantity(20);
-        item.setMake("MAKE1");
-        item.setType("TYPE1");
-        inMem.addItem(item);
+        Item item1 = new Item();
+        item1.setCode("code1");
+        item1.setQuantity(20);
+        item1.setMake("MAKE1");
+        item1.setType("TYPE1");
+        inMem.addItem(item1);
     }
 
     @Test
@@ -44,12 +44,14 @@ public class InventoryManagementTest {
         assertFalse(b);// code2 not in inventory
         b = inMem.placeOrder("code1", 20);
         assertTrue(b);//as order successful
+        b = inMem.placeOrder("code1", 20);
+        assertFalse(b);//as order successful
         b = inMem.canPlaceOrder("code1", 20);
         assertFalse(b);// As no more of code1 left
 
     }
 
-    @Test
+   @Test
     public void testMultiThreading() throws InterruptedException {
         // for (int run = 0, numberOfThreads = 2; run < 1000; run++) {
         int numberOfThreads = 2;
