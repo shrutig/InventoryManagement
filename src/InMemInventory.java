@@ -9,8 +9,8 @@ public class InMemInventory implements Inventory, OrderManager {
 
     public Item searchItem(String code) {// return null if item not present
         Iterator<Item> itr;
-            itr = items.iterator();// getting Iterator from array
-            // list to traverse elements
+        itr = items.iterator();// getting Iterator from array
+        // list to traverse elements
         Item item = null;
         while (itr.hasNext()) {
             item = (Item) itr.next();
@@ -30,16 +30,17 @@ public class InMemInventory implements Inventory, OrderManager {
         synchronized (items) {
             Item item = searchItem(code);
             int index = items.indexOf(item);
+
             if (item != null) {
                 item.setQuantity(quantity);
                 items.set(index, item);
             }
-       }
+        }
     }
 
     public boolean placeOrder(String code, int quantity) {
-        synchronized (this) {
         boolean isOrdered = false;
+        synchronized (items) {
             Item item = searchItem(code);
             if (item != null) {
                 if (item.getQuantity() >= quantity) {
